@@ -1,8 +1,10 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { VideoAspectRatio, Scene } from '../types';
-import { generateVideo, analyzeVideoPrompt, extendVideo } from '../services/geminiService';
+import { generateVideo, extendVideo } from '../services/geminiService';
 import { fileToBase64 } from '../utils/fileUtils';
 import { generateVideoThumbnail } from '../utils/videoUtils';
+import { getApiErrorMessage, isInvalidApiKeyError } from '../utils/errorUtils';
 import Spinner from './common/Spinner';
 import Icon from './common/Icon';
 
@@ -144,6 +146,13 @@ const VideoHub: React.FC = () => {
         }
     };
 
+    const handleClearTimeline = () => {
+        if (window.confirm('Are you sure you want to delete all scenes from the timeline? This action cannot be undone.')) {
+            setScenes([]);
+            setSelectedSceneId(null);
+        }
+    };
+
     const handleDragSort = () => {
         if (dragItem.current === null || dragOverItem.current === null) return;
         const newScenes = [...scenes];
@@ -155,12 +164,9 @@ const VideoHub: React.FC = () => {
     };
 
     const handleApiError = (e: any) => {
-        const errorMessage = e?.message || "An unexpected error occurred.";
-        if (e?.message?.includes("Requested entity was not found.")) {
-           setError("Your API key is invalid. Please select a valid key to continue.");
+        setError(getApiErrorMessage(e, 'VideoHub'));
+        if (isInvalidApiKeyError(e)) {
            setIsApiKeyReady(false);
-        } else {
-           setError(errorMessage);
         }
     };
     
@@ -246,13 +252,30 @@ const VideoHub: React.FC = () => {
                      
                     {/* Timeline */}
                     <div>
-                        <h3 className="text-lg font-bold mb-2">Timeline</h3>
+                        <div className="flex justify-between items-center mb-2">
+                            <h3 className="text-lg font-bold">Timeline</h3>
+                            {scenes.length > 0 && (
+                                <button
+                                    onClick={handleClearTimeline}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 dark:text-red-400 bg-red-100 dark:bg-red-900/30 rounded-lg hover:bg-red-200 dark:hover:bg-red-900/50 disabled:opacity-50"
+                                    aria-label="Clear all scenes from timeline"
+                                >
+                                    <Icon name="trash" className="h-4 w-4" />
+                                    Clear All
+                                </button>
+                            )}
+                        </div>
                         <div className="bg-gray-100 dark:bg-dark rounded-lg p-2 min-h-[140px] overflow-x-auto flex items-center space-x-3">
                            {scenes.map((scene, index) => (
                                <div
                                  key={scene.id}
-                                 className={`relative shrink-0 w-32 h-24 rounded-lg cursor-pointer group shadow-md ${selectedSceneId === scene.id ? 'ring-2 ring-primary' : ''}`}
+                                 role="button"
+                                 tabIndex={0}
+                                 aria-label={`Select scene ${index + 1} to view and edit`}
+                                 aria-pressed={selectedSceneId === scene.id}
+                                 className={`relative shrink-0 w-32 h-24 rounded-lg cursor-pointer group shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-light dark:focus:ring-offset-dark focus:ring-primary ${selectedSceneId === scene.id ? 'ring-2 ring-primary' : ''}`}
                                  onClick={() => setSelectedSceneId(scene.id)}
+                                 onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSelectedSceneId(scene.id); } }}
                                  draggable
                                  onDragStart={() => dragItem.current = index}
                                  onDragEnter={() => dragOverItem.current = index}

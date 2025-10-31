@@ -21,7 +21,7 @@ export const generateText = async (prompt: string, useThinkingMode: boolean): Pr
     return response.text;
   } catch (error) {
     console.error("Error generating text:", error);
-    return "Sorry, I encountered an error while processing your request.";
+    throw error;
   }
 };
 
@@ -44,7 +44,7 @@ export const analyzeImage = async (prompt: string, imageBase64: string, mimeType
         return response.text;
     } catch (error) {
         console.error("Error analyzing image:", error);
-        return "Sorry, I couldn't analyze the image. Please try again.";
+        throw error;
     }
 };
 
@@ -58,27 +58,37 @@ export const analyzeVideoPrompt = async (prompt: string): Promise<string> => {
         return response.text;
     } catch (error) {
         console.error("Error analyzing video prompt:", error);
-        return "Sorry, an error occurred during video analysis.";
+        throw error;
     }
 };
 
 export const generateImage = async (prompt: string, aspectRatio: ImageAspectRatio): Promise<string | null> => {
     try {
         const ai = getGenAI();
-        const response = await ai.models.generateImages({
-            model: 'imagen-4.0-generate-001',
-            prompt,
+        // Incorporate the aspect ratio into the prompt as gemini-2.5-flash-image doesn't have a specific config for it.
+        const fullPrompt = `${prompt}, aspect ratio ${aspectRatio}`;
+        
+        const response = await ai.models.generateContent({
+            model: 'gemini-2.5-flash-image',
+            contents: {
+                parts: [{ text: fullPrompt }],
+            },
             config: {
-                numberOfImages: 1,
-                outputMimeType: 'image/jpeg',
-                aspectRatio,
+                responseModalities: [Modality.IMAGE],
             },
         });
-        const base64ImageBytes: string = response.generatedImages[0].image.imageBytes;
-        return `data:image/jpeg;base64,${base64ImageBytes}`;
+
+        for (const part of response.candidates[0].content.parts) {
+            if (part.inlineData) {
+                const base64ImageBytes: string = part.inlineData.data;
+                const mimeType = part.inlineData.mimeType || 'image/png';
+                return `data:${mimeType};base64,${base64ImageBytes}`;
+            }
+        }
+        return null;
     } catch (error) {
         console.error("Error generating image:", error);
-        return null;
+        throw error;
     }
 };
 
@@ -107,7 +117,7 @@ export const editImage = async (prompt: string, imageBase64: string, mimeType: s
         return null;
     } catch (error) {
         console.error("Error editing image:", error);
-        return null;
+        throw error;
     }
 };
 
@@ -185,7 +195,7 @@ export const generateSpeech = async (text: string, voice: PrebuiltVoice): Promis
         return response.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data || null;
     } catch (error) {
         console.error("Error generating speech:", error);
-        return null;
+        throw error;
     }
 };
 
@@ -200,7 +210,7 @@ export const generateScript = async (prompt: string, format: string): Promise<st
     return response.text;
   } catch (error) {
     console.error("Error generating script:", error);
-    return "Sorry, I encountered an error while writing the script.";
+    throw error;
   }
 };
 
@@ -215,7 +225,7 @@ export const generateStory = async (prompt: string, genre: string, tone: string)
     return response.text;
   } catch (error) {
     console.error("Error generating story:", error);
-    return "Sorry, I encountered an error while telling the story.";
+    throw error;
   }
 };
 
@@ -266,6 +276,6 @@ export const generateMusicComponent = async (
     return response.text;
   } catch (error) {
     console.error("Error generating music component:", error);
-    return "Sorry, I encountered an error while composing the music idea.";
+    throw error;
   }
 };

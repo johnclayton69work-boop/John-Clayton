@@ -1,5 +1,7 @@
+
 import React, { useState, useRef, useEffect } from 'react';
 import { generateImage } from '../services/geminiService';
+import { getApiErrorMessage } from '../utils/errorUtils';
 import Spinner from './common/Spinner';
 import Icon from './common/Icon';
 
@@ -455,10 +457,10 @@ const ThumbnailGenerator: React.FC = () => {
             if (result) {
                 setBackgroundImage(result);
             } else {
-                setError('Failed to generate background. Please try again.');
+                setError('Failed to generate background. The model did not return any content. Please try a different prompt.');
             }
-        } catch (e) {
-            setError('An unexpected error occurred.');
+        } catch (e: any) {
+            setError(getApiErrorMessage(e, 'ThumbnailGenerator'));
         }
         setIsLoading(false);
     };

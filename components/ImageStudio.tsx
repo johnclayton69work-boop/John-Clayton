@@ -1,6 +1,8 @@
+
 import React, { useState, useRef } from 'react';
 import { ImageAspectRatio, Layer } from '../types';
 import { generateImage } from '../services/geminiService';
+import { getApiErrorMessage } from '../utils/errorUtils';
 import Spinner from './common/Spinner';
 import Icon from './common/Icon';
 
@@ -31,11 +33,10 @@ const ImageStudio: React.FC = () => {
                 setLayers(prev => [newLayer, ...prev]);
                 setPrompt('');
             } else {
-                setError('Failed to generate image. Please try again.');
+                setError('Failed to generate image. The model did not return any content. Please try again with a different prompt.');
             }
-        } catch (e) {
-            setError('An unexpected error occurred.');
-            console.error(e);
+        } catch (e: any) {
+            setError(getApiErrorMessage(e, 'ImageStudio'));
         }
         setIsLoading(false);
     };

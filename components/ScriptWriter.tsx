@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { generateScript } from '../services/geminiService';
+import { getApiErrorMessage } from '../utils/errorUtils';
 import Spinner from './common/Spinner';
 
 const ScriptWriter: React.FC = () => {
@@ -10,7 +11,30 @@ const ScriptWriter: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    const scriptFormats = ['Screenplay (Film/TV)', 'Stage Play', 'YouTube Video'];
+    const formats = ['Screenplay (Film/TV)', 'Stage Play', 'Audio Drama / Podcast', 'Commercial Ad', 'Video Game Scene'];
+
+    const scriptIdeas = [
+        {
+            title: 'Coffee Shop Meet-Cute',
+            prompt: 'Two people, a pessimist and an optimist, meet for the first time when they both reach for the last croissant at a busy coffee shop. Write a short scene with witty dialogue.',
+            format: 'Screenplay (Film/TV)',
+        },
+        {
+            title: 'Spaceship Malfunction',
+            prompt: 'An astronaut is on a solo mission to Mars when a critical system fails. Their only contact is with a mission control operator 50 million miles away. Build the tension.',
+            format: 'Audio Drama / Podcast',
+        },
+        {
+            title: 'The Magical Watch',
+            prompt: 'Write a 30-second commercial script for a watch that can rewind time, but only by ten seconds.',
+            format: 'Commercial Ad',
+        },
+    ];
+
+    const handleExampleClick = (idea: { prompt: string; format: string; }) => {
+        setPrompt(idea.prompt);
+        setFormat(idea.format);
+    };
 
     const handleGenerate = async () => {
         if (!prompt) return;
@@ -21,9 +45,8 @@ const ScriptWriter: React.FC = () => {
         try {
             const result = await generateScript(prompt, format);
             setScript(result);
-        } catch (e) {
-            setError('An unexpected error occurred while writing the script.');
-            console.error(e);
+        } catch (e: any) {
+            setError(getApiErrorMessage(e, 'ScriptWriter'));
         }
         setIsLoading(false);
     };
@@ -35,27 +58,38 @@ const ScriptWriter: React.FC = () => {
                 {/* Controls */}
                 <div className="space-y-4">
                     <div>
-                        <label htmlFor="prompt" className="block text-sm font-medium mb-1">Your Idea</label>
+                        <label htmlFor="prompt" className="block text-sm font-medium mb-1">Your Script Idea</label>
                         <textarea
                             id="prompt"
                             value={prompt}
                             onChange={(e) => setPrompt(e.target.value)}
-                            placeholder="e.g., A detective discovers a secret about their partner while solving a case."
+                            placeholder="e.g., A detective interrogates a surprisingly clever parrot."
                             className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-primary focus:outline-none bg-transparent"
-                            rows={8}
+                            rows={6}
                         />
                     </div>
                     <div>
                         <label htmlFor="format" className="block text-sm font-medium mb-1">Script Format</label>
-                        <select
-                            id="format"
-                            value={format}
-                            onChange={(e) => setFormat(e.target.value)}
-                            className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-dark focus:ring-primary focus:outline-none"
-                        >
-                            {scriptFormats.map(f => <option key={f} value={f}>{f}</option>)}
+                        <select id="format" value={format} onChange={(e) => setFormat(e.target.value)} className="w-full p-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-dark focus:ring-primary focus:outline-none">
+                            {formats.map(f => <option key={f} value={f}>{f}</option>)}
                         </select>
                     </div>
+
+                    <div>
+                        <label className="block text-sm font-medium mb-2">Need inspiration? Try one of these!</label>
+                        <div className="flex flex-wrap gap-2">
+                            {scriptIdeas.map((idea) => (
+                                <button
+                                    key={idea.title}
+                                    onClick={() => handleExampleClick(idea)}
+                                    className="px-3 py-1.5 text-xs font-medium text-gray-700 bg-gray-100 rounded-full hover:bg-gray-200 dark:bg-dark dark:text-gray-300 dark:hover:bg-dark-light transition-colors"
+                                >
+                                    {idea.title}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+
                     <button
                         onClick={handleGenerate}
                         disabled={isLoading || !prompt.trim()}

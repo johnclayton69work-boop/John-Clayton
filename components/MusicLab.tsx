@@ -1,5 +1,7 @@
+
 import React, { useState } from 'react';
 import { generateMusicComponent } from '../services/geminiService';
+import { getApiErrorMessage } from '../utils/errorUtils';
 import Spinner from './common/Spinner';
 import { MusicGenerationType } from '../types';
 
@@ -36,9 +38,8 @@ const MusicLab: React.FC = () => {
         try {
             const result = await generateMusicComponent(generationType, genre, mood, instruments, duration, lyricTheme, key, tempo);
             setMusicIdea(result);
-        } catch (e) {
-            setError('An unexpected error occurred while generating the music idea.');
-            console.error(e);
+        } catch (e: any) {
+            setError(getApiErrorMessage(e, 'MusicLab'));
         }
         setIsLoading(false);
     };

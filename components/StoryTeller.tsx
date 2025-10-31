@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { generateStory } from '../services/geminiService';
+import { getApiErrorMessage } from '../utils/errorUtils';
 import Spinner from './common/Spinner';
 
 const StoryTeller: React.FC = () => {
@@ -50,9 +51,8 @@ const StoryTeller: React.FC = () => {
         try {
             const result = await generateStory(prompt, genre, tone);
             setStory(result);
-        } catch (e) {
-            setError('An unexpected error occurred while telling the story.');
-            console.error(e);
+        } catch (e: any) {
+            setError(getApiErrorMessage(e, 'StoryTeller'));
         }
         setIsLoading(false);
     };

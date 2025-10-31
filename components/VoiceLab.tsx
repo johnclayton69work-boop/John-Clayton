@@ -2,6 +2,7 @@
 import React, { useState, useRef } from 'react';
 import { generateSpeech } from '../services/geminiService';
 import { decode, decodeAudioData } from '../utils/audioUtils';
+import { getApiErrorMessage } from '../utils/errorUtils';
 import Spinner from './common/Spinner';
 import Icon from './common/Icon';
 import { PrebuiltVoice } from '../types';
@@ -27,11 +28,10 @@ const VoiceLab: React.FC = () => {
             if (result) {
                 setAudioData(result);
             } else {
-                setError('Failed to generate speech.');
+                setError('Failed to generate speech. The model did not return any audio data.');
             }
-        } catch (e) {
-            setError('An unexpected error occurred during speech generation.');
-            console.error(e);
+        } catch (e: any) {
+            setError(getApiErrorMessage(e, 'VoiceLab'));
         }
         setIsLoading(false);
     };

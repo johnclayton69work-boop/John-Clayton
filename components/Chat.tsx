@@ -3,6 +3,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { ChatMessage } from '../types';
 import { generateText, analyzeImage } from '../services/geminiService';
 import { fileToBase64 } from '../utils/fileUtils';
+import { getApiErrorMessage } from '../utils/errorUtils';
 import Spinner from './common/Spinner';
 import Icon from './common/Icon';
 
@@ -49,9 +50,8 @@ const Chat: React.FC = () => {
             } else {
                 responseText = await generateText(input, useThinkingMode);
             }
-        } catch (error) {
-            responseText = 'An error occurred. Please try again.';
-            console.error(error);
+        } catch (error: any) {
+            responseText = getApiErrorMessage(error, 'Chat');
         }
 
         const modelMessage: ChatMessage = {
